@@ -6,8 +6,9 @@ from aiogram import types
 from aiogram.types import InputFile
 
 from bot.states import States
-from model.predictor import model
+from model.predictor import get_segmented_map, get_results_model, model_
 from utils import messages, utils
+import cv2
 
 
 async def welcome(msg: types.Message):
@@ -33,16 +34,26 @@ async def image_handler(msg: types.Message):
         images = images[-1]
 
     path_to_none_edit_image = os.path.join('images', f"{msg.from_user.id}.jpeg")
+    path_to_edited_image = os.path.join('images', f"{msg.from_user.id}_edited.jpeg")
 
-    await images.download(path_to_none_edit_image)
+    await images.download(destination_file=path_to_none_edit_image)
 
-    prediction = model(utils.prepare_image(path_to_none_edit_image))
+    image, label, probability = get_results_model(path_to_none_edit_image, model_)
 
-    await msg.reply(messages.prediction.format(prediction), reply_markup=types.ReplyKeyboardRemove())
+    cv2.imwrite(path_to_edited_image, image)
+
+    if probability < 0.001:
+        message = f'Ваше МРТ обработанно!\nСкорее всего у вас {label}'
+    else:
+        message = f'Ваше МРТ обработанно!\nСкорее всего у вас {label}'
+
+    await msg.reply(message, reply_markup=types.ReplyKeyboardRemove())
 
     await msg.reply_photo(caption=messages.describe, photo=InputFile(
-        path_or_bytesio=path_to_none_edit_image  # Change to path to edited photo
+        path_or_bytesio=path_to_edited_image  # Change to path to edited photo
     ))
+
+    os.remove(path_to_edited_image)
 
     await msg.answer(messages.validating, reply_markup=utils.form_reply_keyboard(['Да', 'Нет', 'Не знаю']))
 

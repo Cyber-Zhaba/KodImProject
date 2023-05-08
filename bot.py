@@ -8,6 +8,9 @@ from aiogram.utils import executor
 from bot.states import States
 from handlers import welcome, image_handler, user_agreement, validating_answer_of_model, correcting_answer_from_model
 
+from torch import nn
+
+
 bot = Bot(token="6045456181:AAEhTGp24GRONqZTtoDk5irffoCLAV_wpIE")
 dp = Dispatcher(bot, storage=MemoryStorage())
 
